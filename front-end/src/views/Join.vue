@@ -6,6 +6,7 @@
         <input v-model="name" placeholder="Full Name">
         <p></p>
         <input v-model="username" placeholder="Username">
+        <p v-if="usernameInUse">This username is in use, please pick another.</p>
         <p></p>
         <textarea v-model="bio" placeholder="Bio"></textarea>
         <p></p>
@@ -105,14 +106,16 @@ export default {
       file: null,
       addUser: null,
       users: [],
-      findUsername: "",
-      findUser: null,
     }
   },
   computed: {
-    suggestions() {
-      let users = this.users.filter(user => user.username.toLowerCase().startsWith(this.findUsername.toLowerCase()));
-      return users.sort((a, b) => a.username > b.username);
+    usernameInUse() {
+      let existingUser = this.users.find(user => user.username === this.username);
+      if (existingUser == undefined) {
+        return false;
+      } else {
+        return true;
+      }
     }
   },
   created() {
@@ -147,10 +150,6 @@ export default {
       } catch (error) {
         console.log(error);
       }
-    },
-    selectUser(user) {
-      this.findUsername = "";
-      this.findUser = user;
     },
   }
 }

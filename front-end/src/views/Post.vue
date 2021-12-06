@@ -3,7 +3,7 @@
   <h1>Create a Post</h1>
     <div class="add">
       <div class="form">
-        <input v-model="findUsername" placeholder="User">
+        <input v-model="username" placeholder="User">
         <div class="suggestions" v-if="suggestions.length > 0">
           <div class="suggestion" v-for="s in suggestions" :key="s.id" @click="selectUser(s)">{{s.username}}
           </div>
@@ -16,33 +16,8 @@
         <button @click="upload">Upload</button>
       </div>
       <div class="upload" v-if="addPost">
-        <h2>{{addItem.title}}</h2>
-        <h2>{{addItem.description}}</h2>
-        <img :src="addItem.path" />
-      </div>
-    </div>
-    <div class="heading">
-      <div class="circle">2</div>
-      <h2>Edit/Delete an Item</h2>
-    </div>
-    <div class="edit">
-      <div class="form">
-        <input v-model="findTitle" placeholder="Search">
-        <div class="suggestions" v-if="suggestions.length > 0">
-          <div class="suggestion" v-for="s in suggestions" :key="s.id" @click="selectItem(s)">{{s.title}}
-          </div>
-        </div>
-      </div>
-      <div class="upload" v-if="findItem">
-        <input v-model="findItem.title">
-        <p></p>
-        <textarea v-model="findItem.description"></textarea>
-        <p></p>
-        <img :src="findItem.path" />
-      </div>
-      <div class="actions" v-if="findItem">
-        <button @click="deleteItem(findItem)">Delete</button>
-        <button @click="editItem(findItem)">Edit</button>
+        <img :src="addPost.path" />
+        <h2>{{addPost.description}}</h2>
       </div>
     </div>
 </div>
@@ -130,13 +105,12 @@ export default {
       file: null,
       addPost: null,
       users: [],
-      findUsername: "",
       findUser: null,
     }
   },
   computed: {
     suggestions() {
-      let users = this.users.filter(user => user.username.toLowerCase().startsWith(this.findUsername.toLowerCase()));
+      let users = this.users.filter(user => user.username.toLowerCase().startsWith(this.username.toLowerCase()));
       return users.sort((a, b) => a.username > b.username);
     }
   },
@@ -153,8 +127,7 @@ export default {
         formData.append('photo', this.file, this.file.name);
         let r1 = await axios.post('/api/photos', formData);
         let r2 = await axios.post('/api/posts', {
-          username: this.title,
-          userid: this.title,
+          userid: this.userid,
           description: this.description,
           path: r1.data.path
         });
@@ -173,31 +146,9 @@ export default {
       }
     },
     selectUser(user) {
-      this.findUsername = user.username;
+      this.username = user.username;
+      this.userid = user._id;
       this.findUser = user;
-    },
-    async deleteItem(item) {
-      try {
-        await axios.delete("/api/items/" + item._id);
-        this.findItem = null;
-        this.getItems();
-        return true;
-      } catch (error) {
-        console.log(error);
-      }
-    },
-    async editItem(item) {
-      try {
-        await axios.put("/api/items/" + item._id, {
-          title: this.findItem.title,
-          description: this.findItem.description,
-        });
-        this.findItem = null;
-        this.getItems();
-        return true;
-      } catch (error) {
-        console.log(error);
-      }
     },
   }
 }

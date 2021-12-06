@@ -1,5 +1,6 @@
 const express = require('express');
 const bodyParser = require("body-parser");
+const fs = require("fs");
 
 const app = express();
 app.use(bodyParser.json());
@@ -25,8 +26,7 @@ const userSchema = new mongoose.Schema({
 });
 
 const postSchema = new mongoose.Schema({
-  username: String,
-  userid: Number,
+  userid: String,
   path: String,
   description: String,
   likes: Number,
@@ -106,7 +106,6 @@ app.put('/api/users/:id', async (req, res) => {
 
 app.post('/api/posts', async (req, res) => {
   const post = new Post({
-    username: req.body.username,
     userid: req.body.userid,
     path: req.body.path,
     description: req.body.description,

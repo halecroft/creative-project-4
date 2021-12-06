@@ -1,20 +1,17 @@
 <template>
 <div id="app">
   <div class="header">
-    <router-link to="/">
-      <!--<div class="logo">
-        <img src="/ordinary.png">
-      </div>-->
-    </router-link>
-    <div class="title">
-      <h1>Fastagram</h1>
-    </div>
+    <a class="title" href="https://cp4.halecroft.net">Fastagram</a>
+    <p>Not an Instagram clone!&trade;</p>
   </div>
   <div class="content">
     <router-view />
   </div>
   <div class="footer">
     <a href="https://github.com/halecroft/creative-project-4">Github Link</a>
+    <router-link to="/">Home</router-link>
+    <router-link to="/post">New Post</router-link>
+    <router-link to="/join">Join</router-link>
   </div>
 </div>
 </template>
@@ -25,27 +22,41 @@ html {
 }
 
 body {
+  position: relative;
   font-family: 'Montserrat', sans-serif;
   font-size: 16px;
   background: #fff;
-  padding: 0px;
+  padding: 0px 0px 3rem 0px;
   margin: 0px;
+  min-height: 100vh;
+}
+
+.app {
+    padding-bottom: 5rem;
 }
 
 /* Header */
 .header {
   display: flex;
-  padding: 10px 100px 0px 100px;
-  background-color: #5BDEFF;
-  color: #1C454F;
+  flex-direction: column;
+  padding: 10px 100px 10px 100px;
+  background-color: #da3eb8;
+  justify-content: center;
+  align-items: center;
+}
+
+.header p {
+    color: white;
 }
 
 .title {
-  margin-top: 5px;
+  font-size: 3rem;
+  text-decoration: none;
+  color: white;
 }
 
-.title h1 {
-  font-size: 30px;
+.title:visited {
+  text-decoration: none;
 }
 
 .content {
@@ -55,15 +66,28 @@ body {
 
 /* Footer */
 .footer {
-  height: 50px;
-  padding: 20px 100px 0px 100px;
+  display: flex;
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 4rem;
+  padding: 0px 100px 0px 100px;
   background: #e3e3e3;
-  font-size: 12px;
+  font-size: 1.5rem;
+  bottom: 0;
+  justify-content: center;
+  align-items: center;
 }
 
 .footer a {
   color: #000;
-  margin-right: 1rem;
+  text-decoration: none;
+  margin: 0 2rem;
+}
+
+.footer a:visited {
+  color: #000;
+  text-decoration: none;
 }
 
 h1 {

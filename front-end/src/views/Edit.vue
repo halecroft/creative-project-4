@@ -1,48 +1,31 @@
 <template>
 <div class="admin">
   <h1>Edit Your Account</h1>
-    <div class="add">
+    <div class="edit" v-if="(!userDeleted && !userNotFound)">
       <div class="form">
-        <input v-model="name" placeholder="name">
+        <input v-model="findUser.name" placeholder="Name">
         <p></p>
-        <input v-model="username" placeholder="Username">
+        <input v-model="findUser.username" placeholder="Username">
+        <p v-if="usernameInUse">This username is in use, please pick another.</p>
         <p></p>
-        <textarea v-model="bio" placeholder="Bio"></textarea>
+        <textarea v-model="findUser.bio" placeholder="Bio"></textarea>
         <p></p>
         <p>Profile Picture</p>
-        <input type="file" name="photo" @change="fileChanged">
-        <button @click="upload">Upload</button>
-      </div>
-      <div class="upload" v-if="addUser">
-        <h2>{{addUser.name}}</h2>
-        <h2>{{addUser.username}}</h2>
-        <h2>{{addUser.bio}}</h2>
-        <img :src="addUser.path" />
-      </div>
-    </div>
-    <div class="heading">
-      <div class="circle">2</div>
-      <h2>Edit/Delete an Item</h2>
-    </div>
-    <div class="edit">
-      <div class="form">
-        <input v-model="findUsername" placeholder="Search">
-        <div class="suggestions" v-if="suggestions.length > 0">
-          <div class="suggestion" v-for="s in suggestions" :key="s.id" @click="selectUser(s)">{{s.username}}
-          </div>
-        </div>
-      </div>
-      <div class="upload" v-if="findUser">
-        <input v-model="findUser.title">
-        <p></p>
-        <textarea v-model="findUser.description"></textarea>
-        <p></p>
         <img :src="findUser.path" />
+        <p></p>
+        <input type="file" name="photo" @change="fileChanged">
       </div>
-      <div class="actions" v-if="findUser">
-        <button @click="deleteItem(findUser)">Delete</button>
-        <button @click="editItem(findUser)">Edit</button>
+      <div class="actions">
+        <button @click="deleteUser(findUser)">Delete User</button>
+        <p></p>
+        <button @click="editUser(findUser)">Save Edits</button>
       </div>
+    </div>
+    <div class="message" v-if="userDeleted">
+      <h2>User Successfully Deleted</h2>
+    </div>
+    <div class="message" v-if="userNotFound">
+      <h2>User Not Found</h2>
     </div>
 </div>
 </template>
@@ -97,68 +80,57 @@ button {
   margin: 0px;
 }
 
-.upload img {
+.upload img, .form img {
   max-width: 300px;
 }
 
-/* Suggestions */
-.suggestions {
-  width: 200px;
-  border: 1px solid #ccc;
-}
-
-.suggestion {
-  min-height: 20px;
-}
-
-.suggestion:hover {
-  background-color: #5BDEFF;
-  color: #fff;
+.message h2 {
+    color: red;
+    font-size: 1.5rem;
 }
 </style>
 
 <script>
 import axios from 'axios';
 export default {
-  name: 'Join',
+  name: 'Edit',
   data() {
     return {
-      name: "",
-      username: "",
-      bio: "",
       file: null,
-      addUser: null,
       users: [],
-      findUsername: "",
+      posts: [],
+      origUsers: [],
       findUser: null,
+      profileChanged: false,
+      userDeleted: false,
+      userNotFound: false,
     }
   },
   computed: {
-    suggestions() {
-      let users = this.users.filter(user => user.username.toLowerCase().startsWith(this.findUsername.toLowerCase()));
-      return users.sort((a, b) => a.username > b.username);
+    usernameInUse() {
+      let existingUser = this.origUsers.find(user => user.username === this.findUser.username);
+      if (existingUser == undefined || existingUser._id === this.findUser._id) {
+        return false;
+      } else {
+        return true;
+      }
     }
   },
   created() {
     this.getUsers();
+    this.getPosts();
   },
   methods: {
     fileChanged(event) {
-      this.file = event.target.files[0]
+      this.profileChanged = true;
+      this.file = event.target.files[0];
     },
-    async upload() {
+    async getPosts() {
       try {
-        const formData = new FormData();
-        formData.append('photo', this.file, this.file.name);
-        console.log(this.description);
-        let r1 = await axios.post('/api/photos', formData);
-        let r2 = await axios.post('/api/users', {
-          name: this.name,
-          username: this.username,
-          bio: this.bio,
-          path: r1.data.path
-        });
-        this.addUser = r2.data;
+        let response = await axios.get("/api/posts");
+        this.posts = response.data;
+        this.isFetchingPosts = false;
+        return true;
       } catch (error) {
         console.log(error);
       }
@@ -167,20 +139,35 @@ export default {
       try {
         let response = await axios.get("/api/users");
         this.users = response.data;
+        this.origUsers = response.data.map(user => ({username: user.username, _id: user._id}));
+        this.findUser = this.users.find(user => user._id === this.$route.params.id);
+        if (this.findUser == undefined) {
+          this.findUser = this.users.find(user => user.username === this.$route.params.id);
+          if (this.findUser == undefined) {
+            this.userNotFound = true;
+          }
+        }
         return true;
       } catch (error) {
         console.log(error);
       }
     },
-    selectUser(user) {
-      this.findUsername = "";
-      this.findUser = user;
-    },
     async deleteUser(user) {
+      for (const post of this.posts) {
+        if (post.userid === user._id) {
+          try {
+            await axios.delete("/api/posts/" + post._id);
+            return true;
+          } catch (error) {
+            console.log(error);
+          }
+        }
+      }
+        
       try {
         await axios.delete("/api/users/" + user._id);
         this.findUser = null;
-        this.getUsers();
+        this.userDeleted = true;
         return true;
       } catch (error) {
         console.log(error);
@@ -188,10 +175,25 @@ export default {
     },
     async editUser(user) {
       try {
-        await axios.put("/api/users/" + user._id, {
-          title: this.findUser.title,
-          description: this.findUser.description,
+        if (this.profileChanged) {
+          const formData = new FormData();
+          formData.append('photo', this.file, this.file.name);
+          let newPhoto = await axios.post('/api/photos', formData);
+          await axios.put("/api/users/" + user._id, {
+          name: this.findUser.name,
+          username: this.findUser.username,
+          bio: this.findUser.bio,
+          path: newPhoto.data.path
         });
+        } else {
+          await axios.put("/api/users/" + user._id, {
+          name: this.findUser.name,
+          username: this.findUser.username,
+          bio: this.findUser.bio,
+          path: this.findUser.path
+        });
+        }
+        
         this.findUser = null;
         this.getUsers();
         return true;

@@ -1,31 +1,36 @@
 <template>
-<div class="home">
-  <section class="image-gallery" v-if="(!isFetchingPosts && !isFetchingUsers)">
-    <div class="image" v-for="post in posts" :key="post._id">
-      <div class="user-info">
-        <div class="cropper">
-          <img class="avatar" :src="users.find(user => user._id === post.userid).path" />
-        </div>
-        <router-link :to="'/user/' + post.userid">{{users.find(user => user._id === post.userid).name}}</router-link>
+<div class="user">
+  <div class="message" v-if="userNotFound">
+    <h2>User Not Found</h2>
+  </div>
+  <div v-if="!userNotFound">
+    <h1>{{findUser.name}}</h1>
+    <h2>{{findUser.username}}</h2>
+    <p>{{findUser.bio}}</p>
+    <router-link :to="'/user/' + this.$route.params.id + '/edit'">Edit Profile</router-link>
+    <section class="image-gallery" v-if="(!isFetchingPosts && !isFetchingUsers)">
+      <div class="image" v-for="post in posts.filter(post => post.userid === findUser._id)" :key="post._id">
+        <img :src="post.path" />
+        <h3>{{post.description}}</h3>
+        <button>{{post.likes}} Likes</button>
+        <button class="delete" @click="deletePost(post)">Delete Post</button>
       </div>
-      <img :src="post.path" />
-      <h3>{{post.description}}</h3>
-      <button @click="likePost(post)">{{post.likes}} Likes</button>
-    </div>
-  </section>
+    </section>
+  </div>
 </div>
 </template>
 
 <style scoped>
 
-.image a {
+a {
   font-size: 1rem;
-  font-weight: bold;
   color: black;
   text-decoration: none;
+  border: black 1px solid;
+  border-radius: 5px;
 }
 
-.image a:visited {
+a:visited {
   color: black;
   text-decoration: none;
 }
@@ -34,27 +39,9 @@
   font-style: italic;
 }
 
-.user-info {
-  display: flex;
-  flex-direction: row;
-  align-items: center;
-}
-
-.cropper {
-  width: 2rem;
-  height: 2rem;
-  position: relative;
-  overflow: hidden;
-  border-radius: 50%;
-  margin-right: 0.5rem;
-  margin-bottom: 0.25rem;
-}
-
-.avatar {
-  height: 100%;
-  display: inline;
-  margin: 0 auto;
-  width: auto;
+.message h2 {
+    color: red;
+    font-size: 1.5rem;
 }
 
 *,
@@ -64,10 +51,11 @@
 }
 
 .image-gallery {
+  margin-top: 1rem;
   column-gap: 2rem;
 }
 
-.home {
+.user {
   display: flex;
   flex-direction: row;
   justify-content: center;
@@ -93,9 +81,16 @@ button {
   border-radius: 5px;
 }
 
-button:hover {
-  background-color: #da3eb8;
-  border: #da3eb8 1px solid;
+.delete {
+  background-color: rgb(236, 236, 236);
+  border: red 1px solid;
+  border-radius: 5px;
+  float: right;
+}
+
+.delete:hover {
+  background-color: red;
+  border: red 1px solid;
   border-radius: 5px;
   color: white;
 }
@@ -123,13 +118,15 @@ button:hover {
 import axios from 'axios';
 
 export default {
-  name: 'Home',
+  name: 'User',
   data() {
     return {
       posts: [],
       users: [],
+      findUser: null,
       isFetchingPosts: true,
       isFetchingUsers: true,
+      userNotFound: false,
     }
   },
   created() {
@@ -151,17 +148,22 @@ export default {
       try {
         let response = await axios.get("/api/users");
         this.users = response.data;
+        this.findUser = this.users.find(user => user._id === this.$route.params.id);
+        if (this.findUser == undefined) {
+          this.findUser = this.users.find(user => user.username === this.$route.params.id);
+          if (this.findUser == undefined) {
+            this.userNotFound = true;
+          }
+        }
         this.isFetchingUsers = false;
         return true;
       } catch (error) {
         console.log(error);
       }
     },
-    async likePost(post) {
+    async deletePost(post) {
       try {
-        await axios.put("/api/posts/" + post._id, {
-        likes: post.likes + 1,
-        });
+        await axios.delete("/api/posts/" + post._id);
         this.getPosts();
         return true;
       } catch (error) {
